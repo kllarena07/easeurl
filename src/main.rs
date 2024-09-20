@@ -16,6 +16,14 @@ use hyper::{Request, Response};
 use hyper_util::rt::TokioIo;
 use tokio::net::TcpListener;
 
+use serde::{Deserialize, Serialize};
+use serde_json;
+
+#[derive(Serialize, Deserialize, Debug)]
+struct UrlData {
+    real_url: String,
+}
+
 fn get_redis_client() -> Result<RedisClient, RedisError> {
     let username = var("REDIS_USERNAME").expect("REDIS_USERNAME must be set.");
     let password = var("REDIS_PASSWORD").expect("REDIS_PASSWORD must be set.");
@@ -47,7 +55,14 @@ async fn process(req: Request<hyper::body::Incoming>) -> Result<Response<Full<By
                 let body_bytes = req.collect().await.unwrap().to_bytes();
                 let body_string = String::from_utf8(body_bytes.to_vec()).unwrap();
 
-                println!("{:?}", body_string);
+                let url_data: UrlData = match serde_json::from_str(&body_string) {
+                    Ok(data) => data,
+                    Err(_) => {
+                        return Ok(Response::new(Full::new(Bytes::from("Invalid JSON data."))))
+                    }
+                };
+
+                println!("{}", url_data.real_url);
                 format!("Creating shortened URL from {}.", "hello")
             } else {
                 String::from("Endpoint method access doesn't exist.")
