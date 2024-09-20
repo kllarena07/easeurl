@@ -5,7 +5,7 @@ use dotenv::dotenv;
 use fred::prelude::*;
 use std::env::var;
 
-fn get_redis_client() -> Result<RedisClient, std::io::Error> {
+fn get_redis_client() -> Result<RedisClient, RedisError> {
     let username = var("REDIS_USERNAME").expect("REDIS_USERNAME must be set.");
     let password = var("REDIS_PASSWORD").expect("REDIS_PASSWORD must be set.");
     let host = var("REDIS_HOST").expect("REDIS_HOST must be set.");
