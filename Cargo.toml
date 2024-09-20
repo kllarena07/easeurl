@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 dotenv = "0.15.0"
 fred = "9.2.0"
-tokio = "1.40.0"
+tokio = { version = "1.40.0", features = ["full"] }
 hyper = { version = "1.4.1", features = ["full"] }
 http-body-util = "0.1"
 hyper-util = { version = "0.1", features = ["full"] }
