@@ -5,10 +5,7 @@ use dotenv::dotenv;
 use fred::prelude::*;
 use std::env::var;
 
-#[tokio::main]
-async fn main() -> Result<(), RedisError> {
-    dotenv().ok();
-
+fn get_redis_client() -> Result<RedisClient, std::io::Error> {
     let username = var("REDIS_USERNAME").expect("REDIS_USERNAME must be set.");
     let password = var("REDIS_PASSWORD").expect("REDIS_PASSWORD must be set.");
     let host = var("REDIS_HOST").expect("REDIS_HOST must be set.");
@@ -16,12 +13,22 @@ async fn main() -> Result<(), RedisError> {
 
     let redis_url = format!("redis://{}:{}@{}:{}", username, password, host, port);
 
-    // create a config from a URL
     let config = RedisConfig::from_url(&redis_url)?;
-    // see the `Builder` interface for more information
+
     let client = Builder::from_config(config).build()?;
+
+    Ok(client)
+}
+
+#[tokio::main]
+async fn main() -> Result<(), RedisError> {
+    dotenv().ok();
+
+    let client = get_redis_client().unwrap();
+
     // callers can manage the tokio task driving the connections
     let _connection_task = client.init().await?;
+
     // convert response types to most common rust types
     let foo: Option<String> = client.get("foo").await?;
     println!("Foo: {:?}", foo);
@@ -30,14 +37,11 @@ async fn main() -> Result<(), RedisError> {
         .set(
             "foo",
             "bar",
-            Some(Expiration::EX(1)),
+            Some(Expiration::KEEPTTL),
             Some(SetOptions::NX),
             false,
         )
         .await?;
-
-    // or use turbofish. the first type is always the response type.
-    println!("Foo: {:?}", client.get::<Option<String>, _>("foo").await?);
 
     client.quit().await?;
     Ok(())
