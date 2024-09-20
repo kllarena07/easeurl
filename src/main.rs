@@ -77,7 +77,6 @@ async fn process(req: Request<hyper::body::Incoming>) -> Result<Response<Full<By
 }
 
 async fn shutdown_signal() {
-    // Wait for the CTRL+C signal
     tokio::signal::ctrl_c()
         .await
         .expect("failed to install CTRL+C signal handler");
@@ -95,7 +94,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     let client = get_redis_client().unwrap();
 
-    // callers can manage the tokio task driving the connections
     client.init().await?;
 
     // convert response types to most common rust types
@@ -118,7 +116,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             Ok((stream, _addr)) = listener.accept() => {
                 let io = TokioIo::new(stream);
                 let conn = http.serve_connection(io, service_fn(process));
-                // watch this connection
                 let fut = graceful.watch(conn);
                 tokio::spawn(async move {
                     if let Err(e) = fut.await {
@@ -129,7 +126,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
             _ = &mut signal => {
                 eprintln!("graceful shutdown signal received");
-                // stop the accept loop
                 break;
             }
         }
