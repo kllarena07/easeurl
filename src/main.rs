@@ -83,8 +83,24 @@ async fn process(req: Request<hyper::body::Incoming>) -> Result<Response<Full<By
                     }
                 };
 
-                println!("{}", url_data.real_url);
-                format!("Creating shortened URL from {}.", "hello")
+                let real_url = url_data.real_url;
+                let url_id = create_url_id();
+                println!("Creating shortened URL from {}.", real_url);
+
+                match client
+                    .set::<(), &str, String>(
+                        &url_id,
+                        real_url,
+                        Some(Expiration::KEEPTTL),
+                        Some(SetOptions::NX),
+                        false,
+                    )
+                    .await
+                {
+                    Ok(_) => format!("Successfully created shortened URL. ID is {}", url_id),
+                    Err(_) => String::from("Failed to create shortened URL."),
+                }
+                // <String, String, Option<Expiration>, Option<SetOptions>, bool>
             } else {
                 String::from("Endpoint method access doesn't exist.")
             };
