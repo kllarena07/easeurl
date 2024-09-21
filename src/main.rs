@@ -143,21 +143,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let mut signal = std::pin::pin!(shutdown_signal());
     let http = http1::Builder::new();
 
-    // convert response types to most common rust types
-    // let foo: Option<String> = client.get("foo").await?;
-    // println!("Foo: {:?}", foo);
-
-    // client
-    //     .set(
-    //         "foo",
-    //         "bar",
-    //         Some(Expiration::KEEPTTL),
-    //         Some(SetOptions::NX),
-    //         false,
-    //     )
-    //     .await?;
-    // let shortened_url = req.uri().path();
-
     loop {
         tokio::select! {
             Ok((stream, _addr)) = listener.accept() => {
