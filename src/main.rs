@@ -42,13 +42,22 @@ fn get_redis_client() -> Result<RedisClient, RedisError> {
 async fn process(req: Request<hyper::body::Incoming>) -> Result<Response<Full<Bytes>>, Infallible> {
     println!("Incoming request: {:?}", req);
 
+    let client = get_redis_client().unwrap();
+
+    client.init().await.unwrap();
+
     let method = req.method();
     let uri_path = req.uri().path();
 
     let response = match method {
         &hyper::Method::GET => {
-            let response = format!("Obtaining real URL from {}.", uri_path);
-            Response::new(Full::new(Bytes::from(response)))
+            let shortened_url = &uri_path[1..];
+
+            println!("Obtaining real URL from {}.", shortened_url);
+            let real_url: Option<String> = client.get(shortened_url).await.unwrap();
+            Response::new(Full::new(Bytes::from(
+                real_url.expect("Shortened URL was not found."),
+            )))
         }
         &hyper::Method::POST => {
             let response = if uri_path == "/" {
@@ -73,6 +82,8 @@ async fn process(req: Request<hyper::body::Incoming>) -> Result<Response<Full<By
         _ => Response::new(Full::new(Bytes::from("Method not implemented."))),
     };
 
+    client.quit().await.unwrap();
+
     Ok(response)
 }
 
@@ -91,10 +102,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let graceful = hyper_util::server::graceful::GracefulShutdown::new();
     let mut signal = std::pin::pin!(shutdown_signal());
     let http = http1::Builder::new();
-
-    let client = get_redis_client().unwrap();
-
-    client.init().await?;
 
     // convert response types to most common rust types
     // let foo: Option<String> = client.get("foo").await?;
@@ -139,8 +146,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             eprintln!("timed out wait for all connections to close");
         }
     }
-
-    client.quit().await?;
 
     Ok(())
 }
