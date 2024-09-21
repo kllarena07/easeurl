@@ -19,9 +19,21 @@ use tokio::net::TcpListener;
 use serde::{Deserialize, Serialize};
 use serde_json;
 
+use rand::{distributions::Alphanumeric, Rng};
+
 #[derive(Serialize, Deserialize, Debug)]
 struct UrlData {
     real_url: String,
+}
+
+fn create_url_id() -> String {
+    let rand_string: String = rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(5)
+        .map(char::from)
+        .collect();
+
+    rand_string
 }
 
 fn get_redis_client() -> Result<RedisClient, RedisError> {
