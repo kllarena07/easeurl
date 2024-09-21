@@ -4,9 +4,9 @@ I decided to make this project to learn Rust, Redis, and multithreading (yes, th
 
 ## Crates Used
 
-- [Fred](https://github.com/aembke/fred.rs)
-- [Hyper](https://github.com/hyperium/hyper)
-- [serde-rs json](https://github.com/serde-rs/json)
+- [fred](https://github.com/aembke/fred.rs)
+- [hyper](https://github.com/hyperium/hyper)
+- [serde-rs/json](https://github.com/serde-rs/json)
 - [rand](https://github.com/rust-random/rand)
 - [dotenv](https://github.com/dotenv-rs/dotenv)
 
