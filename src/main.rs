@@ -66,10 +66,22 @@ async fn process(req: Request<hyper::body::Incoming>) -> Result<Response<Full<By
             let shortened_url = &uri_path[1..];
 
             println!("Obtaining real URL from {}.", shortened_url);
-            let real_url: Option<String> = client.get(shortened_url).await.unwrap();
-            Response::new(Full::new(Bytes::from(
-                real_url.expect("Shortened URL was not found."),
-            )))
+
+            let real_url = match client.get::<Option<String>, &str>(shortened_url).await {
+                Ok(Some(url)) => url,
+                Ok(None) => {
+                    return Ok(Response::new(Full::new(Bytes::from(
+                        "Shortened URL not found.",
+                    ))));
+                }
+                Err(_) => {
+                    return Ok(Response::new(Full::new(Bytes::from(
+                        "Failed to obtain real URL.",
+                    ))));
+                }
+            };
+
+            Response::new(Full::new(Bytes::from(real_url)))
         }
         &hyper::Method::POST => {
             let post_response = if uri_path == "/" {
