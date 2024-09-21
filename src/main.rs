@@ -51,51 +51,59 @@ fn get_redis_client() -> Result<RedisClient, RedisError> {
     Ok(client)
 }
 
+fn create_res(response: String) -> Response<Full<Bytes>> {
+    Response::new(Full::new(Bytes::from(response)))
+}
+
 async fn process(req: Request<hyper::body::Incoming>) -> Result<Response<Full<Bytes>>, Infallible> {
     println!("Incoming request: {:?}", req);
 
-    let client = get_redis_client().unwrap();
+    let client = match get_redis_client() {
+        Ok(client) => client,
+        Err(err) => {
+            eprintln!("{}", err);
+            return Ok(create_res(String::from("Internal Server Error 500.")));
+        }
+    };
 
-    client.init().await.unwrap();
+    match client.init().await {
+        Ok(_) => {}
+        Err(err) => {
+            eprintln!("{}", err);
+            return Ok(create_res(String::from("Internal Server Error 500.")));
+        }
+    };
 
     let method = req.method();
     let uri_path = req.uri().path();
 
-    let response = match method {
+    let response: String = match method {
         &hyper::Method::GET => {
             let shortened_url = &uri_path[1..];
 
             println!("Obtaining real URL from {}.", shortened_url);
 
-            let real_url = match client.get::<Option<String>, &str>(shortened_url).await {
+            match client.get::<Option<String>, &str>(shortened_url).await {
                 Ok(Some(url)) => url,
-                Ok(None) => {
-                    return Ok(Response::new(Full::new(Bytes::from(
-                        "Shortened URL not found.",
-                    ))));
-                }
-                Err(_) => {
-                    return Ok(Response::new(Full::new(Bytes::from(
-                        "Failed to obtain real URL.",
-                    ))));
-                }
-            };
-
-            Response::new(Full::new(Bytes::from(real_url)))
+                Ok(None) => String::from("Shortened URL not found."),
+                Err(_) => String::from("Failed to obtain real URL."),
+            }
         }
-        &hyper::Method::POST => {
-            let post_response = if uri_path == "/" {
-                let body_bytes = req.collect().await.unwrap().to_bytes();
-                let body_string = String::from_utf8(body_bytes.to_vec()).unwrap();
-
-                let url_data: UrlData = match serde_json::from_str(&body_string) {
-                    Ok(data) => data,
-                    Err(_) => {
-                        return Ok(Response::new(Full::new(Bytes::from("Invalid JSON data."))))
-                    }
+        &hyper::Method::POST => match uri_path {
+            "/" => {
+                let body_bytes = match req.collect().await {
+                    Ok(data) => data.to_bytes(),
+                    Err(_) => return Ok(create_res(String::from("Internal Server Error 500."))),
                 };
 
-                let real_url = url_data.real_url;
+                let body_string =
+                    String::from_utf8(body_bytes.to_vec()).expect("Internal Server Error 500.");
+
+                let real_url: String = match serde_json::from_str::<UrlData>(&body_string) {
+                    Ok(data) => data.real_url,
+                    Err(_) => return Ok(create_res(String::from("Invalid JSON data."))),
+                };
+
                 let url_id = create_url_id();
                 println!("Creating shortened URL from {}.", real_url);
 
@@ -112,19 +120,21 @@ async fn process(req: Request<hyper::body::Incoming>) -> Result<Response<Full<By
                     Ok(_) => format!("Successfully created shortened URL. ID is {}", url_id),
                     Err(_) => String::from("Failed to create shortened URL."),
                 }
-                // <String, String, Option<Expiration>, Option<SetOptions>, bool>
-            } else {
-                String::from("Endpoint method access doesn't exist.")
-            };
-
-            Response::new(Full::new(Bytes::from(post_response)))
-        }
-        _ => Response::new(Full::new(Bytes::from("Method not implemented."))),
+            }
+            _ => String::from("Endpoint method access doesn't exist."),
+        },
+        _ => String::from("Method not implemented."),
     };
 
-    client.quit().await.unwrap();
+    match client.quit().await {
+        Ok(_) => {}
+        Err(err) => {
+            eprintln!("{}", err);
+            return Ok(create_res(String::from("Internal Server Error 500.")));
+        }
+    };
 
-    Ok(response)
+    Ok(create_res(response))
 }
 
 async fn shutdown_signal() {
