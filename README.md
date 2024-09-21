@@ -4,11 +4,11 @@ I decided to make this project to learn Rust, Redis, and multithreading (yes, th
 
 ## Crates Used
 
-- Fred (a Redis driver built on top of Tokio)
-- Hyper (HTTP framework used to parse requests easier)
-- Serde JSON (JSON parsing)
-- Rand (for generating random shortened URLs)
-- dotenv (using environment variables from .env file)
+- [Fred](https://github.com/aembke/fred.rs)
+- [Hyper](https://github.com/hyperium/hyper)
+- [serde-rs json](https://github.com/serde-rs/json)
+- [rand](https://github.com/rust-random/rand)
+- [dotenv](https://github.com/dotenv-rs/dotenv)
 
 ## TO DO list
 - [x] Connect to Redis client
