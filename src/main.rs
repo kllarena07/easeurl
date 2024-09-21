@@ -72,7 +72,7 @@ async fn process(req: Request<hyper::body::Incoming>) -> Result<Response<Full<By
             )))
         }
         &hyper::Method::POST => {
-            let response = if uri_path == "/" {
+            let post_response = if uri_path == "/" {
                 let body_bytes = req.collect().await.unwrap().to_bytes();
                 let body_string = String::from_utf8(body_bytes.to_vec()).unwrap();
 
@@ -89,7 +89,7 @@ async fn process(req: Request<hyper::body::Incoming>) -> Result<Response<Full<By
                 String::from("Endpoint method access doesn't exist.")
             };
 
-            Response::new(Full::new(Bytes::from(response)))
+            Response::new(Full::new(Bytes::from(post_response)))
         }
         _ => Response::new(Full::new(Bytes::from("Method not implemented."))),
     };
