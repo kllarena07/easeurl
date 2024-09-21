@@ -8,6 +8,7 @@ I decided to make this project to learn Rust, Redis, and multithreading (yes, th
 - Hyper (HTTP framework used to parse requests easier)
 - Serde JSON (JSON parsing)
 - Rand (for generating random shortened URLs)
+- dotenv (using environment variables from .env file)
 
 ## TO DO list
 - [x] Connect to Redis client
