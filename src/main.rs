@@ -1,5 +1,5 @@
 use actix_files::NamedFile;
-use actix_web::{get, App, HttpServer, Result};
+use actix_web::{get, web, App, HttpServer, Result, Responder, HttpResponse};
 use std::env;
 use std::path::PathBuf;
 
@@ -11,6 +11,13 @@ async fn index() -> Result<NamedFile> {
     Ok(NamedFile::open(path)?)
 }
 
+#[get("/{id}")]
+async fn get_id(path: web::Path<String>) -> impl Responder { 
+    let friend = path.into_inner();
+    println!("{}", friend);
+    HttpResponse::Ok().body(friend)
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     println!("Listening on 127.0.0.1:3000");
@@ -18,6 +25,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
         App::new()
             .service(index)
+            .service(get_id)
     })
     .bind(("127.0.0.1", 3000))?
     .run()
