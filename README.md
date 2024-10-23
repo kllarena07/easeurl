@@ -5,15 +5,15 @@ I decided to make this project to learn Rust, Redis, and multithreading (yes, th
 ## Crates Used
 
 - [fred](https://github.com/aembke/fred.rs)
-- [hyper](https://github.com/hyperium/hyper)
+- [actix](https://actix.rs/)
 - [serde-rs/json](https://github.com/serde-rs/json)
 - [rand](https://github.com/rust-random/rand)
 - [dotenv](https://github.com/dotenv-rs/dotenv)
 
 ## TO DO list
-- [x] Connect to Redis client
-- [x] Get Redis Client values
-- [x] Set Redis Client values
+- [ ] Connect to Redis client
+- [ ] Get Redis Client values
+- [ ] Set Redis Client values
 - [ ] HTML client view
   - [ ] URL creation
   - [ ] Real URL obtaining and redirection
@@ -44,10 +44,10 @@ cargo run
 ## Endpoints:
 ### Shortened URL Creation
 
-POST to '/' using the following JSON:
+POST to '/create' using the following JSON:
 ```
 {
-  "real_url": "your url here"
+  "url": "your url here"
 }
 ```
 
