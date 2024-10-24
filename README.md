@@ -28,7 +28,7 @@ git clone https://github.com/kllarena07/url-shortener-redis.git
 ```
 cd url-shortener-redis
 ```
-3. Create a Redis account and cloud/Docker container database
+3. Create a Redis database
 4. Create a `.env` file and define the environment variables
 ```
 REDIS_USERNAME=YOUR_USERNAME_HERE
