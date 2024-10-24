@@ -14,9 +14,9 @@ async fn index() -> Result<NamedFile> {
 
 #[get("/{id}")]
 async fn get_url(path: web::Path<String>) -> impl Responder { 
-    let friend = path.into_inner();
-    println!("{}", friend);
-    HttpResponse::Ok().body(friend)
+    let url_id = path.into_inner();
+    println!("{}", url_id);
+    HttpResponse::Ok().body(url_id)
 }
 
 #[derive(Deserialize)]
