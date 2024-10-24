@@ -1,11 +1,16 @@
 use actix_files::NamedFile;
 use actix_web::{get, post, web, App, HttpServer, Result, Responder, HttpResponse};
+use actix_web::http::header::LOCATION;
 use std::env;
 use std::path::PathBuf;
 use serde::Deserialize;
 use dotenv::dotenv;
 use std::env::var;
 use fred::prelude::*;
+
+struct AppState {
+    redis_client: RedisClient
+}
 
 #[get("/")]
 async fn index() -> Result<NamedFile> {
@@ -15,16 +20,28 @@ async fn index() -> Result<NamedFile> {
     Ok(NamedFile::open(path)?)
 }
 
-struct AppState {
-    redis_client: RedisClient
-}
-
 #[get("/{id}")]
 async fn get_url(path: web::Path<String>, data: web::Data<AppState>) -> impl Responder {
     let url_id = path.into_inner();
-    let result: Option<String> = data.redis_client.get(url_id).await.unwrap_or(None);
-    println!("{:?}", result);
-    HttpResponse::Ok().body("Hello!")
+
+    match data.redis_client.get::<Option<String>, String>(url_id).await {
+        Ok(Some(route)) => {
+            println!("HTTP 302 FOUND: Redirecting to {}", route);
+            HttpResponse::Found()
+                .insert_header((LOCATION, route))
+                .finish()
+        },
+        Ok(None) => {
+            println!("HTTP 404 NOT_FOUND: Redirecting to https://http.cat/404");
+            HttpResponse::Found()
+                .insert_header((LOCATION, "https://http.cat/404"))
+                .finish()
+        },
+        Err(_) => {
+            println!("HTTP 505 INTERNAL SERVER ERROR");
+            HttpResponse::InternalServerError().finish()
+        }
+    }
 }
 
 #[derive(Deserialize)]
