@@ -1,6 +1,6 @@
 # A URL shortener app
 
-I decided to make this project to learn Rust, Redis, and multithreading (yes, the web server is multithreaded) to learn how to handle requests concurrently using Rust
+I decided to make this project to learn Rust, Redis, and multithreading (Tokio) to learn how to handle requests concurrently using Rust.
 
 ## Crates Used
 
