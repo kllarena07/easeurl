@@ -11,9 +11,9 @@ I decided to make this project to learn Rust, Redis, and multithreading (yes, th
 - [dotenv](https://github.com/dotenv-rs/dotenv)
 
 ## TO DO list
-- [ ] Connect to Redis client
-- [ ] Get Redis Client values
-- [ ] Set Redis Client values
+- [X] Connect to Redis client
+- [X] Get Redis Client values
+- [X] Set Redis Client values
 - [ ] HTML client view
   - [ ] URL creation
   - [ ] Real URL obtaining and redirection
