@@ -7,6 +7,7 @@ use serde::Deserialize;
 use dotenv::dotenv;
 use std::env::var;
 use fred::prelude::*;
+use rand::{distributions::Alphanumeric, Rng};
 
 struct AppState {
     redis_client: RedisClient
@@ -38,7 +39,7 @@ async fn get_url(path: web::Path<String>, data: web::Data<AppState>) -> impl Res
                 .finish()
         },
         Err(_) => {
-            println!("HTTP 505 INTERNAL SERVER ERROR");
+            println!("HTTP 505 INTERNAL SERVER ERROR: Error getting url");
             HttpResponse::InternalServerError().finish()
         }
     }
@@ -49,11 +50,31 @@ struct CreateRequest {
     url: String
 }
 
+fn create_shortened_url() -> String {
+    let rand_string: String = rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(5)
+        .map(char::from)
+        .collect();
+    rand_string
+}
+
 #[post("/create")]
-async fn create_url(data: web::Json<CreateRequest>) -> impl Responder { 
-    let url = data.url.clone();
-    println!("{}", url);
-    HttpResponse::Ok().body(url)
+async fn create_url(body: web::Json<CreateRequest>, data: web::Data<AppState>) -> impl Responder { 
+    let real_url = body.url.clone();
+    let shortened_url = create_shortened_url();
+    let expiration_seconds = 300;
+
+    match data.redis_client.set::<(), &str, String>(&shortened_url, real_url, Some(Expiration::EX(expiration_seconds)), Some(SetOptions::NX), false).await {
+        Ok(_) => {
+            println!("HTTP 200 OK: Successfully created {}", &shortened_url);
+            HttpResponse::Ok().body(shortened_url)
+        },
+        Err(_) => {
+            println!("HTTP 505 INTERNAL SERVER ERROR: Error creating shortened url, {}", &shortened_url);
+            HttpResponse::InternalServerError().finish()
+        }
+    }
 }
 
 #[actix_web::main]
