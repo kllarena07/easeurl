@@ -35,8 +35,24 @@
         const create_btn = document.querySelector('#create_btn');
         const shortened_url = document.querySelector('#shortened_url');
 
+        function isValidURL(url) {
+            if (!url || url.trim() === "") return false;
+
+            try {
+                new URL(url);
+                return true;
+            } catch (_) {
+                return false;
+            }
+        }
+
         async function create_shortened_url() {
             try {
+                if (!isValidURL(url_entree.value)) {
+                    notyf.error("Incorrect URL");
+                    return;
+                }
+
                 const data = {
                     'url': url_entree.value
                 }
