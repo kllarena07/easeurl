@@ -14,10 +14,10 @@ I decided to make this project to learn Rust, Redis, and multithreading (yes, th
 - [X] Connect to Redis client
 - [X] Get Redis Client values
 - [X] Set Redis Client values
-- [ ] HTML client view
-  - [ ] URL creation
-  - [ ] Real URL obtaining and redirection
-  - [ ] Error handling
+- [X] HTML client view
+  - [X] URL creation
+  - [X] Real URL obtaining and redirection
+  - [X] Error handling
 
 ## How to run this app yourself
 1. Clone this repository
@@ -50,7 +50,9 @@ POST to '/create' using the following JSON:
   "url": "your url here"
 }
 ```
+Alternatively, you can simply open `127.0.0.1:3000` in your web browser to access a user-friendly web interface that provides this functionality.
 
 ### Getting real URL
 GET to '/[shortened_url_id_here]':
 - Returns a string to the real url
+
