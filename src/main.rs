@@ -3,6 +3,9 @@ use actix_web::{get, post, web, App, HttpServer, Result, Responder, HttpResponse
 use std::env;
 use std::path::PathBuf;
 use serde::Deserialize;
+use dotenv::dotenv;
+use std::env::var;
+use fred::prelude::*;
 
 #[get("/")]
 async fn index() -> Result<NamedFile> {
@@ -12,11 +15,16 @@ async fn index() -> Result<NamedFile> {
     Ok(NamedFile::open(path)?)
 }
 
+struct AppState {
+    redis_client: RedisClient
+}
+
 #[get("/{id}")]
-async fn get_url(path: web::Path<String>) -> impl Responder { 
+async fn get_url(path: web::Path<String>, data: web::Data<AppState>) -> impl Responder {
     let url_id = path.into_inner();
-    println!("{}", url_id);
-    HttpResponse::Ok().body(url_id)
+    let result: Option<String> = data.redis_client.get(url_id).await.unwrap_or(None);
+    println!("{:?}", result);
+    HttpResponse::Ok().body("Hello!")
 }
 
 #[derive(Deserialize)]
@@ -33,10 +41,26 @@ async fn create_url(data: web::Json<CreateRequest>) -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    dotenv().ok();
+
+    let username = var("REDIS_USERNAME").expect("REDIS_USERNAME must be set.");
+    let password = var("REDIS_PASSWORD").expect("REDIS_PASSWORD must be set.");
+    let host = var("REDIS_HOST").expect("REDIS_HOST must be set.");
+    let port = var("REDIS_PORT").expect("REDIS_PORT must be set.");
+    let redis_url = format!("redis://{}:{}@{}:{}", username, password, host, port);
+
+    let config = RedisConfig::from_url(&redis_url).unwrap();
+    let client = Builder::from_config(config).build().unwrap();
+
+    client.init().await.map_err(|err| {
+        std::io::Error::new(std::io::ErrorKind::Other, format!("Redis error: {}", err))
+    })?;
+
     println!("Listening on 127.0.0.1:3000");
 
-    HttpServer::new(|| {
+    HttpServer::new(move || {
         App::new()
+            .app_data(web::Data::new(AppState { redis_client: client.clone() }))
             .service(index)
             .service(get_url)
             .service(create_url)
