@@ -77,7 +77,7 @@ async fn create_url(body: web::Json<CreateRequest>, data: web::Data<AppState>) -
     }
 }
 
-#[actix_web::main]
+#[shuttle_runtime::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
 
