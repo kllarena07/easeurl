@@ -4,10 +4,68 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Page Title</title>
+    <title>EaseURL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
 </head>
-<body>
-    <h1>Hello World!</h1>
+<body class="w-full h-dvh flex justify-center items-center text-lg">
+    <section class="flex flex-col gap-2 border p-5 rounded-md w-full max-w-[600px]">
+        <div class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
+                <path fill-rule="evenodd" d="M19.902 4.098a3.75 3.75 0 0 0-5.304 0l-4.5 4.5a3.75 3.75 0 0 0 1.035 6.037.75.75 0 0 1-.646 1.353 5.25 5.25 0 0 1-1.449-8.45l4.5-4.5a5.25 5.25 0 1 1 7.424 7.424l-1.757 1.757a.75.75 0 1 1-1.06-1.06l1.757-1.757a3.75 3.75 0 0 0 0-5.304Zm-7.389 4.267a.75.75 0 0 1 1-.353 5.25 5.25 0 0 1 1.449 8.45l-4.5 4.5a5.25 5.25 0 1 1-7.424-7.424l1.757-1.757a.75.75 0 1 1 1.06 1.06l-1.757 1.757a3.75 3.75 0 1 0 5.304 5.304l4.5-4.5a3.75 3.75 0 0 0-1.035-6.037.75.75 0 0 1-.354-1Z" clip-rule="evenodd" />
+            </svg>
+            <h1 class="font-bold">Shorten a URL link with <i>EaseURL</i></h1>
+        </div>
+        <input class="border p-2" id="url_entree" placeholder="Enter your link here"></input>
+        <button id="create_btn" class="bg-sky-400 font-bold p-2 text-white">Shorten URL</button>
+        <a class="text-center underline text-blue-600 active:text-purple-600 focus:text-purple-600" target="_blank" rel="noreferrer" hidden id="shortened_url"></a>
+    </section>
+    <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
+    <script>
+        const notyf = new Notyf({
+            duration: 2000,
+            ripple: true,
+            position: {
+                x: 'center',
+                y: 'top'
+            }
+        });
+
+        const url_entree = document.querySelector('#url_entree');
+        const create_btn = document.querySelector('#create_btn');
+        const shortened_url = document.querySelector('#shortened_url');
+
+        async function create_shortened_url() {
+            try {
+                const data = {
+                    'url': url_entree.value
+                }
+
+                const response = await fetch("http://127.0.0.1:3000/create", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const text = await response.text();
+                const url = `http://127.0.0.1:3000/${text}`;
+
+                shortened_url.hidden = false;
+                shortened_url.innerText = url;
+                shortened_url.href = url;
+
+                notyf.success("Created shortened URL");
+            } catch (e) {
+                notyf.error(e);
+            }
+        }
+
+        create_btn.addEventListener("click", async () => { 
+            await create_shortened_url();
+        });
+    </script>
 </body>
 </html>
 
