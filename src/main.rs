@@ -1,13 +1,15 @@
 use actix_files::NamedFile;
-use actix_web::{get, post, web, App, HttpServer, Result, Responder, HttpResponse};
+use actix_web::{get, post, web, Result, Responder, HttpResponse};
 use actix_web::http::header::LOCATION;
 use std::env;
 use std::path::PathBuf;
 use serde::Deserialize;
-use dotenv::dotenv;
-use std::env::var;
 use fred::prelude::*;
 use rand::{distributions::Alphanumeric, Rng};
+use shuttle_runtime::SecretStore;
+use shuttle_actix_web::ShuttleActixWeb;
+use fred::clients::RedisClient;
+use fred::prelude::{Builder, RedisConfig};
 
 struct AppState {
     redis_client: RedisClient
@@ -78,32 +80,29 @@ async fn create_url(body: web::Json<CreateRequest>, data: web::Data<AppState>) -
 }
 
 #[shuttle_runtime::main]
-async fn main() -> std::io::Result<()> {
-    dotenv().ok();
+async fn actix_web_service(
+    #[shuttle_runtime::Secrets] secret_store: SecretStore
+) -> ShuttleActixWeb<impl FnOnce(&mut web::ServiceConfig) + Send + Clone + 'static> {
 
-    let username = var("REDIS_USERNAME").expect("REDIS_USERNAME must be set.");
-    let password = var("REDIS_PASSWORD").expect("REDIS_PASSWORD must be set.");
-    let host = var("REDIS_HOST").expect("REDIS_HOST must be set.");
-    let port = var("REDIS_PORT").expect("REDIS_PORT must be set.");
+    let username = secret_store.get("REDIS_USERNAME").expect("REDIS_USERNAME must be set.");
+    let password = secret_store.get("REDIS_PASSWORD").expect("REDIS_PASSWORD must be set.");
+    let host = secret_store.get("REDIS_HOST").expect("REDIS_HOST must be set.");
+    let port = secret_store.get("REDIS_PORT").expect("REDIS_PORT must be set.");
     let redis_url = format!("redis://{}:{}@{}:{}", username, password, host, port);
 
     let config = RedisConfig::from_url(&redis_url).unwrap();
     let client = Builder::from_config(config).build().unwrap();
 
-    client.init().await.map_err(|err| {
-        std::io::Error::new(std::io::ErrorKind::Other, format!("Redis error: {}", err))
+    client.init().await.map_err(|err| -> anyhow::Error {
+        err.into()
     })?;
 
-    println!("Listening on 127.0.0.1:3000");
-
-    HttpServer::new(move || {
-        App::new()
-            .app_data(web::Data::new(AppState { redis_client: client.clone() }))
+    let factory = move |cfg: &mut web::ServiceConfig| {
+        cfg.app_data(web::Data::new(AppState { redis_client: client.clone() }))
             .service(index)
             .service(get_url)
-            .service(create_url)
-    })
-    .bind(("127.0.0.1", 3000))?
-    .run()
-    .await
+            .service(create_url);
+        };
+
+    Ok(factory.into())
 }
