@@ -2,7 +2,9 @@
 
 I decided to make this project to learn Rust, Redis, and multithreading (Tokio) to learn how to handle requests concurrently using Rust.
 
-Live deployed on https://ease-url-bgrv.shuttle.app/
+Live deployment on https://ease-url-bgrv.shuttle.app/
+
+NOTE: app may not work due to Redis's new pricing policy. If the database is inactive and no one uses it for a while, the database will be deleted. Due to the nature of this being a side project, that likelihood of that happening is fairly high.
 
 ## Crates Used
 
