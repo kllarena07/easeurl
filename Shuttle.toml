@@ -1,1 +1,9 @@
-name = "ease-url"
+[deploy]
+include = [
+    "pages/*"
+]
+
+[build]
+assets = [
+    "pages/*"
+]
