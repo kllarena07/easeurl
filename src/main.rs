@@ -1,8 +1,5 @@
-use actix_files::NamedFile;
-use actix_web::{get, post, web, Result, Responder, HttpResponse};
+use actix_web::{get, post, web, Responder, HttpResponse};
 use actix_web::http::header::LOCATION;
-use std::env;
-use std::path::PathBuf;
 use serde::Deserialize;
 use fred::prelude::*;
 use rand::{distributions::Alphanumeric, Rng};
@@ -16,11 +13,25 @@ struct AppState {
 }
 
 #[get("/")]
-async fn index() -> Result<NamedFile> {
-    let root = env::current_dir().unwrap();
-    let abs_path = format!("{}/pages/index.html", root.to_str().unwrap());
-    let path: PathBuf = PathBuf::from(abs_path);
-    Ok(NamedFile::open(path)?)
+async fn index() -> impl Responder {
+   let pages_path = std::path::Path::new("pages");
+
+    match pages_path.try_exists() {
+        Ok(true) => {
+            if pages_path.is_dir() {
+                println!("The 'pages' folder exists");
+            } else {
+                println!("'pages' exists but is not a directory");
+            }
+        },
+        Ok(false) => println!("The 'pages' folder does not exist"),
+        Err(e) => println!("Error checking 'pages' folder: {}", e),
+    }
+
+    match std::fs::read_to_string("pages/index.html") {
+        Ok(contents) => HttpResponse::Ok().content_type("text/html").body(contents),
+        Err(_) => HttpResponse::InternalServerError().body("Error reading index.html"),
+    }
 }
 
 #[get("/{id}")]
