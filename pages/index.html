@@ -64,7 +64,7 @@
                     'url': url_entree_val 
                 };
 
-                const response = await fetch('/create', {
+                const response = await fetch(`${curr_window_loc}create`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
