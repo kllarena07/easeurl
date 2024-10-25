@@ -5,29 +5,27 @@ use fred::prelude::*;
 use rand::{distributions::Alphanumeric, Rng};
 use shuttle_runtime::SecretStore;
 use shuttle_actix_web::ShuttleActixWeb;
-use fred::clients::RedisClient;
-use fred::prelude::{Builder, RedisConfig};
 
 struct AppState {
     redis_client: RedisClient
 }
 
+#[derive(Deserialize)]
+struct CreateRequest {
+    url: String
+}
+
+fn create_shortened_url() -> String {
+    let rand_string: String = rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(5)
+        .map(char::from)
+        .collect();
+    rand_string
+}
+
 #[get("/")]
 async fn index() -> impl Responder {
-   let pages_path = std::path::Path::new("pages");
-
-    match pages_path.try_exists() {
-        Ok(true) => {
-            if pages_path.is_dir() {
-                println!("The 'pages' folder exists");
-            } else {
-                println!("'pages' exists but is not a directory");
-            }
-        },
-        Ok(false) => println!("The 'pages' folder does not exist"),
-        Err(e) => println!("Error checking 'pages' folder: {}", e),
-    }
-
     match std::fs::read_to_string("pages/index.html") {
         Ok(contents) => HttpResponse::Ok().content_type("text/html").body(contents),
         Err(_) => HttpResponse::InternalServerError().body("Error reading index.html"),
@@ -58,20 +56,6 @@ async fn get_url(path: web::Path<String>, data: web::Data<AppState>) -> impl Res
     }
 }
 
-#[derive(Deserialize)]
-struct CreateRequest {
-    url: String
-}
-
-fn create_shortened_url() -> String {
-    let rand_string: String = rand::thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(5)
-        .map(char::from)
-        .collect();
-    rand_string
-}
-
 #[post("/create")]
 async fn create_url(body: web::Json<CreateRequest>, data: web::Data<AppState>) -> impl Responder { 
     let real_url = body.url.clone();
@@ -99,7 +83,7 @@ async fn actix_web_service(
     let password = secret_store.get("REDIS_PASSWORD").expect("REDIS_PASSWORD must be set.");
     let host = secret_store.get("REDIS_HOST").expect("REDIS_HOST must be set.");
     let port = secret_store.get("REDIS_PORT").expect("REDIS_PORT must be set.");
-    let redis_url = format!("redis://{}:{}@{}:{}", username, password, host, port);
+    let redis_url = format!("rediss://{}:{}@{}:{}", username, password, host, port);
 
     let config = RedisConfig::from_url(&redis_url).unwrap();
     let client = Builder::from_config(config).build().unwrap();
