@@ -58,7 +58,7 @@
                     'url': url_entree.value
                 }
 
-                const response = await fetch("http://127.0.0.1:3000/create", {
+                const response = await fetch("https://ease-url-bgrv.shuttle.app/create", {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -67,7 +67,7 @@
                 });
 
                 const text = await response.text();
-                const url = `http://127.0.0.1:3000/${text}`;
+                const url = `https://ease-url-bgrv.shuttle.app/${text}`;
 
                 shortened_url.hidden = false;
                 shortened_url.innerText = url;
