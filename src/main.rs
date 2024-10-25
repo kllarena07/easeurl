@@ -18,7 +18,7 @@ struct AppState {
 #[get("/")]
 async fn index() -> Result<NamedFile> {
     let root = env::current_dir().unwrap();
-    let abs_path = format!("{}/app/index.html", root.to_str().unwrap());
+    let abs_path = format!("{}/pages/index.html", root.to_str().unwrap());
     let path: PathBuf = PathBuf::from(abs_path);
     Ok(NamedFile::open(path)?)
 }
