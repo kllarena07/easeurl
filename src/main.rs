@@ -49,8 +49,8 @@ async fn get_url(path: web::Path<String>, data: web::Data<AppState>) -> impl Res
                 .insert_header((LOCATION, "https://http.cat/404"))
                 .finish()
         },
-        Err(_) => {
-            println!("HTTP 505 INTERNAL SERVER ERROR: Error getting url");
+        Err(e) => {
+            println!("HTTP 505 INTERNAL SERVER ERROR: Error getting url. {}", e);
             HttpResponse::InternalServerError().finish()
         }
     }
@@ -67,8 +67,8 @@ async fn create_url(body: web::Json<CreateRequest>, data: web::Data<AppState>) -
             println!("HTTP 200 OK: Successfully created {}", &shortened_url);
             HttpResponse::Ok().body(shortened_url)
         },
-        Err(_) => {
-            println!("HTTP 505 INTERNAL SERVER ERROR: Error creating shortened url, {}", &shortened_url);
+        Err(e) => {
+            println!("HTTP 505 INTERNAL SERVER ERROR: Error creating shortened url, {}", e);
             HttpResponse::InternalServerError().finish()
         }
     }
@@ -78,7 +78,6 @@ async fn create_url(body: web::Json<CreateRequest>, data: web::Data<AppState>) -
 async fn actix_web_service(
     #[shuttle_runtime::Secrets] secret_store: SecretStore
 ) -> ShuttleActixWeb<impl FnOnce(&mut web::ServiceConfig) + Send + Clone + 'static> {
-
     let username = secret_store.get("REDIS_USERNAME").expect("REDIS_USERNAME must be set.");
     let password = secret_store.get("REDIS_PASSWORD").expect("REDIS_PASSWORD must be set.");
     let host = secret_store.get("REDIS_HOST").expect("REDIS_HOST must be set.");
