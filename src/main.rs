@@ -5,6 +5,7 @@ use fred::prelude::*;
 use rand::{distributions::Alphanumeric, Rng};
 use shuttle_runtime::SecretStore;
 use shuttle_actix_web::ShuttleActixWeb;
+use std::time::Instant;
 
 struct AppState {
     redis_client: RedisClient
@@ -36,9 +37,12 @@ async fn index() -> impl Responder {
 async fn get_url(path: web::Path<String>, data: web::Data<AppState>) -> impl Responder {
     let url_id = path.into_inner();
 
+    let start_time = Instant::now();
+
     match data.redis_client.get::<Option<String>, String>(url_id).await {
         Ok(Some(route)) => {
-            println!("HTTP 302 FOUND: Redirecting to {}", route);
+            let elapsed_time = start_time.elapsed();
+            println!("HTTP 302 FOUND: Redirecting to {} in {:?}", route, elapsed_time);
             HttpResponse::Found()
                 .insert_header((LOCATION, route))
                 .finish()
@@ -51,7 +55,7 @@ async fn get_url(path: web::Path<String>, data: web::Data<AppState>) -> impl Res
         },
         Err(e) => {
             println!("HTTP 505 INTERNAL SERVER ERROR: Error getting url. {}", e);
-            HttpResponse::InternalServerError().finish()
+            HttpResponse::InternalServerError().body(format!("Internal Server Error: 500. {}", e))
         }
     }
 }
@@ -62,14 +66,17 @@ async fn create_url(body: web::Json<CreateRequest>, data: web::Data<AppState>) -
     let shortened_url = create_shortened_url();
     let expiration_seconds = 300;
 
+    let start_time = Instant::now();
+
     match data.redis_client.set::<(), &str, String>(&shortened_url, real_url, Some(Expiration::EX(expiration_seconds)), Some(SetOptions::NX), false).await {
         Ok(_) => {
-            println!("HTTP 200 OK: Successfully created {}", &shortened_url);
+            let elapsed_time = start_time.elapsed();
+            println!("HTTP 200 OK: Successfully created {} in {:?}", &shortened_url, elapsed_time);
             HttpResponse::Ok().body(shortened_url)
         },
         Err(e) => {
             println!("HTTP 505 INTERNAL SERVER ERROR: Error creating shortened url, {}", e);
-            HttpResponse::InternalServerError().finish()
+            HttpResponse::InternalServerError().body(format!("Internal Server Error: 500. {}", e))
         }
     }
 }
