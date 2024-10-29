@@ -2,6 +2,7 @@ use actix_web::{get, post, web, Responder, HttpResponse};
 use actix_web::http::header::LOCATION;
 use serde::Deserialize;
 use fred::prelude::*;
+use fred::types::ReconnectPolicy;
 use rand::{distributions::Alphanumeric, Rng};
 use shuttle_runtime::SecretStore;
 use shuttle_actix_web::ShuttleActixWeb;
@@ -92,9 +93,11 @@ async fn actix_web_service(
     let redis_url = format!("rediss://{}:{}@{}:{}", username, password, host, port);
 
     let config = RedisConfig::from_url(&redis_url).unwrap();
-    let client = Builder::from_config(config).build().unwrap();
+    let policy = ReconnectPolicy::new_constant(10, 5000);
+    let client = Builder::from_config(config).set_policy(policy).build().unwrap();
 
-    client.init().await.map_err(|err| -> anyhow::Error {
+    client.connect();
+    client.wait_for_connect().await.map_err(|err| -> anyhow::Error {
         err.into()
     })?;
 
